@@ -1,0 +1,77 @@
+# Neurons as Adaptive Controllers - Git Ignore File
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Data files (large datasets)
+data/raw_datasets/
+data/ibl_cache/
+*.h5
+*.hdf5
+*.mat
+*.npy
+results/large_outputs/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.bak
+
+# Log files
+*.log
+logs/
+
+# Documentation builds
+docs/_build/
+
+# Specific to this project
+ibl_cache/
+neuropixels_cache/
+simulation_outputs/
