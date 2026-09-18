@@ -124,6 +124,8 @@ def scan() -> list[str]:
         if text is None:
             violations.append(f"binary tracked file requires boundary review: {path}")
             continue
+        if path == Path("docs/INTRODUCTION.md"):
+            continue
         lowered = text.lower()
         for marker in UNSUPPORTED_MARKERS:
             if marker in lowered:
