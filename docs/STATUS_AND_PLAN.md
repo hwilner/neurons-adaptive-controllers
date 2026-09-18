@@ -1,15 +1,21 @@
-# Status and Plan
+# Research Status and Plan
 
-## Current status
+## Answer to the current research question
 
-The current working tree is a **public, data-free independent research codebase**. It contains small controller-style utilities, synthetic tests, and release-boundary documentation. It does not present a completed empirical study, associated results, or an empirical conclusion.
+The repository does not yet answer whether neural systems are adaptive controllers. It contains implemented controller-style software and synthetic tests, but no empirical neural dataset, benchmark, or observed outcome.
 
-> This current status supersedes unsupported claims in earlier repository history and in the prior working tree. Historical commits are preserved, but they are not a statement of the present public scope.
+## Completed work
 
-## Maintained work
+A linear history-based predictor, an autoregressive wrapper, a PID-style reference simulation, a mean baseline, event-time binning, Gaussian smoothing, and a common comparison helper are implemented. Deterministic synthetic tests cover valid predictions, invalid histories, finite-input validation, preprocessing shape, and returned comparison structures.
 
-The maintained public work is limited to improving the clarity, validation, and testability of the retained data-free utilities. The immediate plan is to maintain conservative documentation, strengthen synthetic tests where behavior is well specified, and keep the public-boundary checks aligned with the tracked tree.
+## Successful and failed work
 
-## Interpretation limit
+The successful work is software-level: the retained interfaces behave as specified on synthetic inputs and reject the specified invalid cases. The empirical research question remains untested rather than supported or refuted. No observed accuracy, model superiority, biological interpretation, or neural-controller conclusion has been established.
 
-The retained code expresses computational examples and comparison helpers. It does not by itself establish biological, behavioral, or general scientific conclusions. Any future work that requires data, external materials, or outcome reporting must be separately reviewed before it can be represented in a public release.
+## What remains unimplemented
+
+The repository does not include data acquisition, empirical evaluation, statistical comparison, result reporting, figure generation, or independent reproduction on neural recordings. Those steps are required before any biological or predictive claim can be considered.
+
+## Next research decision
+
+A future empirical extension should predefine the dataset, prediction target, baselines, held-out evaluation, statistical comparison, and interpretation boundary before results are generated. Public contributions are welcome for the data-free methods, tests, documentation, and design of that evaluation plan.
