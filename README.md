@@ -44,6 +44,8 @@ Contributions are welcome. Useful work includes test coverage, numerical validat
 ## Documentation
 
 - [Introduction for new readers](docs/INTRODUCTION.md)
+- [Extended introduction for readers new to neuroscience and control theory](docs/EXTENDED_INTRODUCTION.md)
+- [Methods and contributor guide](docs/METHODS.md)
 - [Current results and discussion](docs/CURRENT_RESULTS_AND_DISCUSSION.md)
 - [Research status and plan](docs/STATUS_AND_PLAN.md)
 - [Methods scope](docs/METHODS_SCOPE.md)
