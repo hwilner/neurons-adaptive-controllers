@@ -23,7 +23,7 @@ The tests must use synthetic in-memory inputs and must not create repository dat
 
 ## Documentation
 
-Use conservative language. Public documentation should describe scope, assumptions, and limitations, not numerical outcomes, target venues, submission plans, citations, identifiers, or contact details. Public callables should use Google-style docstrings with `Args`, `Returns`, and `Raises` sections where applicable.
+Use conservative language. Public documentation should describe scope, assumptions, and limitations, not numerical outcomes, unsupported scope claims, citations, identifiers, or contact details. Public callables should use Google-style docstrings with `Args`, `Returns`, and `Raises` sections where applicable.
 
 ## Future Testing Opportunities
 

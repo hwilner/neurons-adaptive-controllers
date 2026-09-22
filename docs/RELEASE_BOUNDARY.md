@@ -10,7 +10,7 @@ The public boundary keeps this repository reviewable, data-free, and independent
 |---|---|
 | Source code | Data-free model utilities and validation helpers that do not fetch data or write research outputs. |
 | Tests | Synthetic, in-memory tests that do not create repository data or output paths. |
-| Documentation | Scope, limitations, contribution guidance, and methods descriptions without empirical findings or publication claims. |
+| Documentation | Scope, limitations, contribution guidance, and methods descriptions without empirical findings or claims beyond the documented scope. |
 | Tooling | Checks that operate only on tracked paths and tracked text. |
 
 ## Excluded

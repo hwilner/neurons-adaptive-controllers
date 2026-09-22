@@ -38,10 +38,6 @@ PROHIBITED_SUFFIXES = (
 # Fragmented strings prevent this checker from matching its own marker catalog.
 UNSUPPORTED_MARKERS = (
     "international" + " brain" + " lab",
-    "nature" + " neuroscience",
-    "ready" + " for" + " submission",
-    "publication" + "-ready",
-    "manu" + "script",
     "d" + "oi",
 )
 EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
