@@ -321,6 +321,29 @@ where each factor in the numerator says "were both above (or both below) their o
 
 For the conceptual literature behind these ideas (system identification, predictive processing, optimal feedback control, and the cautions about metaphors), see the verified reference list in [INTRODUCTION.md](INTRODUCTION.md). No additional citations are introduced here.
 
+## Learn more (verified links)
+
+Every link below was fetched and verified at the time of writing.
+
+**Feedback control and PID**
+- [Control theory](https://en.wikipedia.org/wiki/Control_theory) — the standard overview of feedback, setpoints, errors, and stability, giving the classic engineering framing behind the shower-knob loop in section 2.
+
+**Fixed points and iterated maps**
+- [Fixed point (mathematics)](https://en.wikipedia.org/wiki/Fixed_point_(mathematics)) — defines fixed points and shows how iteration finds them, exactly the "tomorrow equals today" trick used to recover the setpoint.
+
+**Statistical mechanics and multiplicity**
+- [Microstate (statistical mechanics)](https://en.wikipedia.org/wiki/Microstate_(statistical_mechanics)) — explains the microstate/macrostate distinction and why high-multiplicity outcomes dominate, the counting intuition behind the "many roads" treatment of noise.
+
+**Information theory**
+- [Entropy (information theory)](https://en.wikipedia.org/wiki/Entropy_(information_theory)) — develops entropy as the average number of yes/no questions a value costs, matching the question-counting lens on redundancy and mutual information.
+
+**Least squares and scoring**
+- [Least squares](https://en.wikipedia.org/wiki/Least_squares) — the canonical treatment of minimizing squared misses, which is precisely how `OptimalController.fit` picks its weights.
+- [Coefficient of determination](https://en.wikipedia.org/wiki/Coefficient_of_determination) — explains R² as the fraction of variance a model removes relative to always predicting the mean, the repository's main held-out score.
+
+**Smoothing**
+- [Gaussian filter](https://en.wikipedia.org/wiki/Gaussian_filter) — describes bell-shaped weighted averaging and its properties, the same operation `preprocess_spike_train` uses to smooth firing-rate series.
+
 ## Choosing your road
 
 If you think in code and state machines, take the **automata** roads — a controller is a two-slot memory machine. If you think in loops and step-by-step tables, take **discrete iterated maps** — tomorrow as a function of today is the entire dynamics. If you think in pictures, take **geometry** — stability is a shrinking distance, smoothing is a shadow. If you think in tallies and counting, take **statistical mechanics** and **probability as frequencies** — noise and typicality are just multiplicities and recounts. If you think in structure and connections, take **graph theory** — feedback is a cycle, and cutting an edge kills it. If you think in incentives and opponents, take **game theory** — tuning is choosing a move you can defend against a worst-case disturbance. If you think in what-must-exist checklists, take **set theory** — prediction and control differ by which ingredient sets are populated. If you think in tables of mixing proportions, take **linear algebra as weight tables**. And if you think in questions and answers, take **information theory** — prediction quality is how many yes/no questions the past answers about the future.
