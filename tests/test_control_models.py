@@ -10,6 +10,7 @@ from src.control_models import (
     compare_models,
     preprocess_spike_train,
 )
+from tools.check_public_boundary import DOI_PATTERN
 
 
 class ControlModelsTest(unittest.TestCase):
@@ -51,6 +52,11 @@ class ControlModelsTest(unittest.TestCase):
         """The baseline validates non-finite synthetic inputs."""
         with self.assertRaises(ValueError):
             StaticBaseline().fit([0.0, 1.0, np.nan, 2.0, 3.0])
+
+    def test_doi_pattern_avoids_common_word_false_positive(self) -> None:
+        """The public-boundary pattern matches identifiers, not ordinary words."""
+        self.assertIsNone(DOI_PATTERN.search("undoing a calculation"))
+        self.assertIsNotNone(DOI_PATTERN.search("10.1234/example.identifier"))
 
 
 if __name__ == "__main__":

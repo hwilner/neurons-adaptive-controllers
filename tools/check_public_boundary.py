@@ -36,10 +36,8 @@ PROHIBITED_SUFFIXES = (
     ".svg", ".pdf", ".ipynb",
 )
 # Fragmented strings prevent this checker from matching its own marker catalog.
-UNSUPPORTED_MARKERS = (
-    "international" + " brain" + " lab",
-    "d" + "oi",
-)
+UNSUPPORTED_MARKERS = ("international" + " brain" + " lab",)
+DOI_PATTERN = re.compile(r"\b10\.\d{4,9}/[-._;()/:A-Z0-9]+", re.IGNORECASE)
 EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 RESULT_PATTERN = re.compile(r"\b(?:r|p)\s*(?:=|<|>)\s*[+-]?\d")
 
@@ -126,6 +124,8 @@ def scan() -> list[str]:
         for marker in UNSUPPORTED_MARKERS:
             if marker in lowered:
                 violations.append(f"unsupported public marker in {path}: {marker}")
+        if DOI_PATTERN.search(text):
+            violations.append(f"unsupported public marker in {path}: DOI-like identifier")
         if EMAIL_PATTERN.search(text):
             violations.append(f"email-like identifier in {path}")
         if RESULT_PATTERN.search(text):
