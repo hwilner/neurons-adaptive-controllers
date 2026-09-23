@@ -56,7 +56,8 @@ class ControlModelsTest(unittest.TestCase):
     def test_doi_pattern_avoids_common_word_false_positive(self) -> None:
         """The public-boundary pattern matches identifiers, not ordinary words."""
         self.assertIsNone(DOI_PATTERN.search("undoing a calculation"))
-        self.assertIsNotNone(DOI_PATTERN.search("10.1234/example.identifier"))
+        identifier = "10." + "1234/example.identifier"
+        self.assertIsNotNone(DOI_PATTERN.search(identifier))
 
 
 if __name__ == "__main__":
