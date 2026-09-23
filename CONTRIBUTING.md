@@ -10,6 +10,10 @@ Suitable changes include clearer API documentation, input validation, determinis
 
 Do not add datasets, downloaded material, access records, source-specific metadata, notebooks, figures, raw or derived outputs, result summaries, or tests that write into repository data or output paths. Work that depends on such material belongs outside this public tree.
 
+## Project task workflow
+
+Each atomic task is tracked by a GitHub issue and its matching Project card. When a pull request fully addresses one of those tasks, include `Fixes #<issue-number>`, `Closes #<issue-number>`, or `Resolves #<issue-number>` in the pull-request description. Use a closing keyword only for work that is genuinely complete; use ordinary discussion or a non-closing reference for proposals and partial work. This link gives reviewers a visible relationship between the change and its task, and supports the documented Project-status automation when it is enabled.
+
 ## Local checks
 
 Before proposing a change, run the following commands from the repository root:
