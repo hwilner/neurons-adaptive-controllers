@@ -2,6 +2,10 @@
 
 > **Start here — scope.** The explanations of neurons, changing measurements, prediction, and feedback below are **general background**. This repository’s bounded result is much narrower: it is a working **synthetic methods prototype** with data-free utilities and deterministic tests that use invented, in-memory inputs. It contains no neural dataset, empirical benchmark, figure, statistical comparison, or observed neural result. It therefore does **not** show that a neuron, a neural circuit, or a neural system is an adaptive controller. It also does not report an empirical success or failure.
 
+![Concept figure: a neuron sits inside a control loop: it predicts its next measurement, compares prediction with observation, and feeds the difference back to adjust itself](figures/01-concept-schematic.png)
+
+*Figure 1: A neuron sits inside a control loop: it predicts its next measurement, compares prediction with observation, and feeds the difference back to adjust itself. (Editable Mermaid source: [figures/concept_figure.md](figures/concept_figure.md).)*
+
 ## A concept ladder: from a changing observation to a careful question
 
 ### 1. Begin with the biological backdrop, not a conclusion

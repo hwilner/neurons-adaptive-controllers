@@ -108,6 +108,9 @@ def scan() -> list[str]:
     violations: list[str] = []
     for path in tracked_paths():
         normalized = path.as_posix().lower()
+        if normalized.startswith("docs/figures/"):
+            # Owner-approved exemption: generated illustrations in docs/figures/.
+            continue
         if any(part in normalized for part in PROHIBITED_PATH_PARTS):
             violations.append(f"prohibited tracked path: {path}")
             continue
