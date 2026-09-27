@@ -455,16 +455,25 @@ def compare_models(
 ) -> dict[str, dict[str, Any]]:
     """Fit each retained model to a single in-memory series.
 
+    The shared input is validated once before any model fitting is attempted.
+    Each model is then fitted independently, so a failure confined to one model
+    neither stops nor alters the remaining fits.
+
     Args:
         firing_rate: Finite one-dimensional series used by every model.
         verbose: Whether to print model-progress and failure messages.
 
     Returns:
-        A mapping from model name to its result mapping. A model-level failure is
-        represented by a mapping containing the error message.
+        A mapping from model name to its result mapping. A model-level failure
+        (`ValueError`, `FloatingPointError`, or `numpy.linalg.LinAlgError`
+        raised while fitting that model) is represented by a mapping containing
+        the error message under the `error` key for that model only; the other
+        model results are unaffected.
 
     Raises:
-        ValueError: If the common input is invalid for all models.
+        ValueError: If the common input is invalid for all models. This common
+            input validation occurs before model iteration, so it raises rather
+            than producing per-model error mappings.
     """
     series = _as_finite_series(firing_rate, minimum_length=10, name="firing_rate")
     models: dict[str, Any] = {
