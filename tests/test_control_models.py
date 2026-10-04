@@ -23,6 +23,15 @@ class ControlModelsTest(unittest.TestCase):
         self.assertEqual(len(time), 10)
         self.assertTrue(np.all(np.isfinite(rate)))
 
+    def test_preprocess_empty_event_sequence_returns_zero_rate(self) -> None:
+        """An empty synthetic event sequence bins to a finite zero rate series."""
+        duration, bin_size, sigma = 2.0, 0.2, 1.5
+        time, rate = preprocess_spike_train([], duration=duration, bin_size=bin_size, sigma=sigma)
+        self.assertEqual(time.shape, rate.shape)
+        self.assertEqual(len(time), int(duration / bin_size))
+        self.assertTrue(np.all(np.isfinite(rate)))
+        self.assertTrue(np.all(rate == 0.0))
+
     def test_history_model_predicts_after_fit(self) -> None:
         """A fitted model accepts a history with the configured length."""
         series = np.linspace(0.0, 1.0, 40)
