@@ -32,6 +32,13 @@ class ControlModelsTest(unittest.TestCase):
         self.assertTrue(np.all(np.isfinite(rate)))
         self.assertTrue(np.all(rate == 0.0))
 
+    def test_preprocess_rejects_events_outside_duration(self) -> None:
+        """Synthetic events outside the stated duration are rejected."""
+        with self.assertRaises(ValueError):
+            preprocess_spike_train([-0.1, 0.5], duration=1.0, bin_size=0.1)
+        with self.assertRaises(ValueError):
+            preprocess_spike_train([0.5, 1.1], duration=1.0, bin_size=0.1)
+
     def test_history_model_predicts_after_fit(self) -> None:
         """A fitted model accepts a history with the configured length."""
         series = np.linspace(0.0, 1.0, 40)
