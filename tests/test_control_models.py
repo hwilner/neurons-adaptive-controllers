@@ -6,6 +6,7 @@ import numpy as np
 
 from src.control_models import (
     OptimalController,
+    PIDController,
     StaticBaseline,
     compare_models,
     preprocess_spike_train,
@@ -59,6 +60,12 @@ class ControlModelsTest(unittest.TestCase):
         model = OptimalController(history_length=4)
         with self.assertRaises(ValueError):
             model.predict([0.5, 0.6, 0.7, 0.8])
+
+    def test_pid_rejects_nonfinite_setpoint(self) -> None:
+        """PID fitting rejects a non-finite setpoint on a finite synthetic series."""
+        series = np.linspace(0.0, 1.0, 12)
+        with self.assertRaises(ValueError):
+            PIDController().fit(series, setpoint=np.nan)
 
     def test_comparison_returns_all_retained_models(self) -> None:
         """The comparison helper produces a result mapping for each model."""
