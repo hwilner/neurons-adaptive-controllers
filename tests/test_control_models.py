@@ -54,6 +54,12 @@ class ControlModelsTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             model.predict([0.0, 1.0])
 
+    def test_unfitted_model_prediction_is_rejected(self) -> None:
+        """Prediction before fitting is rejected at the configured history length."""
+        model = OptimalController(history_length=4)
+        with self.assertRaises(ValueError):
+            model.predict([0.5, 0.6, 0.7, 0.8])
+
     def test_comparison_returns_all_retained_models(self) -> None:
         """The comparison helper produces a result mapping for each model."""
         series = np.sin(np.linspace(0.0, 4.0 * np.pi, 80)) + 1.0
