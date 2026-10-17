@@ -8,6 +8,7 @@ from src.control_models import (
     OptimalController,
     PIDController,
     StaticBaseline,
+    _r2_score,
     compare_models,
     preprocess_spike_train,
 )
@@ -81,6 +82,16 @@ class ControlModelsTest(unittest.TestCase):
         """The baseline validates non-finite synthetic inputs."""
         with self.assertRaises(ValueError):
             StaticBaseline().fit([0.0, 1.0, np.nan, 2.0, 3.0])
+
+    def test_r2_score_is_nan_for_constant_target(self) -> None:
+        """A constant target series makes the score undefined, reported as nan."""
+        # Constant targets have zero variance, so the total sum of squares is
+        # zero and the coefficient of determination is undefined; predictions
+        # are constant at a different level so the residual sum is non-zero and
+        # the nan cannot arise from a perfect fit.
+        targets = np.full(6, 2.5)
+        predictions = np.full(6, 1.0)
+        self.assertTrue(np.isnan(_r2_score(targets, predictions)))
 
     def test_doi_pattern_avoids_common_word_false_positive(self) -> None:
         """The public-boundary pattern matches identifiers, not ordinary words."""
