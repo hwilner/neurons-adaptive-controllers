@@ -1,0 +1,65 @@
+# Continuous integration for the data-free controller-style utilities.
+#
+# README.md, CONTRIBUTING.md, and docs/METHODS.md all name two commands as the
+# pre-submission gate, but until this file existed no GitHub Actions run had
+# ever checked the repository, so neither the test suite nor the public
+# boundary scanner was enforced on any change. This workflow runs exactly the
+# two documented commands, so the gate is enforced rather than only stated.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Allow a maintainer to reproduce a CI verdict without pushing a commit.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Cancel superseded runs on the same ref so a force-push does not leave work
+  # queueing up whose result nobody will read.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      # Report every failure instead of stopping at the first one.
+      fail-fast: false
+      matrix:
+        # The utilities are pure NumPy and use no syntax newer than Python
+        # 3.10, so the suite is expected to pass on every supported release.
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install runtime requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile every source and test file
+        run: python -m compileall -q src tests tools
+
+      - name: Run the unit test suite
+        # The same command README.md, CONTRIBUTING.md, and docs/METHODS.md
+        # prescribe for contributors.
+        run: python -m unittest discover -s tests -v
+
+      - name: Run the public boundary check
+        # The same command the release-boundary documentation prescribes.
+        run: python tools/check_public_boundary.py

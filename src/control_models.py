@@ -14,6 +14,18 @@ from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
 
+# Fraction of the lagged pairs used for fitting; the remainder is held out. The
+# split is chronological because shuffling a time series leaks future
+# information into training.
+TRAINING_FRACTION = 0.7
+# Lag order used by the history-based model and the autoregressive wrapper that
+# `compare_models` fits.
+COMPARISON_MODEL_ORDER = 5
+# Relative slack that absorbs binary rounding in a bin-count ratio. Without it
+# a duration that is an exact multiple of the bin width can be counted one bin
+# short, because such a ratio evaluates to just below the integer.
+BIN_COUNT_TOLERANCE = 1e-9
+
 
 def _as_finite_series(
     values: NDArray[np.floating[Any]] | list[float],
@@ -42,6 +54,65 @@ def _as_finite_series(
         raise ValueError(f"{name} must contain at least {minimum_length} values.")
     if not np.all(np.isfinite(series)):
         raise ValueError(f"{name} must contain only finite values.")
+    return series
+
+
+def _minimum_series_length(history_length: int) -> int:
+    """Return the shortest series that supports an identified least-squares fit.
+
+    The history model fits one weight per lag plus an intercept, so the
+    training split must hold at least `history_length + 1` rows. A shorter
+    split leaves the least-squares system rank-deficient: the coefficients are
+    then fixed by a minimum-norm convention rather than by the data, and the
+    reported held-out score reflects that convention instead of generalization.
+
+    The chronological split assigns `max(2, int(TRAINING_FRACTION * n_pairs))`
+    rows to training, and the held-out remainder must still contain at least
+    two values.
+
+    Args:
+        history_length: Number of preceding values used for each prediction.
+
+    Returns:
+        The smallest number of series values that yields an identified fit.
+    """
+    n_params = history_length + 1
+    n_pairs = n_params
+    while True:
+        n_train = max(2, int(TRAINING_FRACTION * n_pairs))
+        if n_train >= n_params and n_pairs - n_train >= 2:
+            return history_length + n_pairs
+        n_pairs += 1
+
+
+def _as_identifiable_series(
+    values: NDArray[np.floating[Any]] | list[float],
+    *,
+    history_length: int,
+    name: str,
+) -> FloatArray:
+    """Validate a series and require that it supports an identified fit.
+
+    Args:
+        values: Values to validate.
+        history_length: Number of preceding values used for each prediction.
+        name: Name used in validation messages.
+
+    Returns:
+        A one-dimensional floating-point array long enough to identify the fit.
+
+    Raises:
+        ValueError: If the input is not one-dimensional, is too short, or has
+            non-finite values.
+    """
+    series = _as_finite_series(values, minimum_length=0, name=name)
+    minimum_length = _minimum_series_length(history_length)
+    if series.size < minimum_length:
+        raise ValueError(
+            f"{name} must contain at least {minimum_length} values to fit "
+            f"{history_length} lags and an intercept on a training split that "
+            f"leaves at least two held-out values."
+        )
     return series
 
 
@@ -125,15 +196,16 @@ class OptimalController:
             descriptive fit metrics.
 
         Raises:
-            ValueError: If the series is too short or invalid for the split.
+            ValueError: If the series is invalid, or is too short to identify
+                the least-squares fit and to leave held-out values.
         """
-        series = _as_finite_series(
+        series = _as_identifiable_series(
             firing_rate,
-            minimum_length=self.history_length + 5,
+            history_length=self.history_length,
             name="firing_rate",
         )
         inputs, targets = self._make_pairs(series)
-        n_train = max(2, int(0.7 * len(inputs)))
+        n_train = max(2, int(TRAINING_FRACTION * len(inputs)))
         if len(inputs) - n_train < 2:
             raise ValueError("firing_rate does not leave enough held-out values.")
         train_inputs, test_inputs = inputs[:n_train], inputs[n_train:]
@@ -255,7 +327,8 @@ class AutoregressiveModel:
             A mapping returned by the underlying history-based fit.
 
         Raises:
-            ValueError: If the input series is invalid or too short.
+            ValueError: If the input series is invalid, or is too short to
+                identify the least-squares fit of the configured order.
         """
         controller = OptimalController(history_length=self.order)
         results = controller.fit(firing_rate)
@@ -301,7 +374,7 @@ class PIDController:
                 not finite.
         """
         series = _as_finite_series(firing_rate, minimum_length=8, name="firing_rate")
-        n_train = max(3, int(0.7 * len(series)))
+        n_train = max(3, int(TRAINING_FRACTION * len(series)))
         if len(series) - n_train < 3:
             raise ValueError("firing_rate does not leave enough held-out values.")
         train_data, test_data = series[:n_train], series[n_train:]
@@ -390,7 +463,7 @@ class StaticBaseline:
             ValueError: If the series is invalid or too short.
         """
         series = _as_finite_series(firing_rate, minimum_length=5, name="firing_rate")
-        n_train = max(2, int(0.7 * len(series)))
+        n_train = max(2, int(TRAINING_FRACTION * len(series)))
         if len(series) - n_train < 2:
             raise ValueError("firing_rate does not leave enough held-out values.")
         train_data, test_data = series[:n_train], series[n_train:]
@@ -412,6 +485,11 @@ def preprocess_spike_train(
 ) -> tuple[FloatArray, FloatArray]:
     """Bin event times and apply Gaussian smoothing to form a rate series.
 
+    The bins tile the stated duration exactly, so the final bin is narrower
+    than `bin_size` when the duration is not a multiple of it. Each rate is
+    measured over the interval its own bin covers, and the returned times are
+    the true bin starts.
+
     Args:
         spike_times: Finite one-dimensional event times in the interval from zero
             through `duration`.
@@ -432,15 +510,24 @@ def preprocess_spike_train(
         raise ValueError("bin_size must be positive and finite.")
     if not np.isfinite(sigma) or sigma <= 0:
         raise ValueError("sigma must be positive and finite.")
+    if duration < bin_size:
+        raise ValueError("duration must contain at least one bin.")
     events = _as_finite_series(spike_times, minimum_length=0, name="spike_times")
     if np.any(events < 0) or np.any(events > duration):
         raise ValueError("spike_times must fall within the stated duration.")
-    n_bins = int(duration / bin_size)
-    if n_bins < 1:
-        raise ValueError("duration must contain at least one bin.")
+    # Derive the bin edges from the requested width and the stated duration
+    # rather than asking `np.histogram` to spread a fixed bin count over the
+    # duration: that would give the bins the width `duration / n_bins`, which
+    # is not the requested width unless the duration divides evenly. Measuring
+    # each width from the edges keeps the rate divisor equal to the interval
+    # the bin actually covers, and keeps the returned times equal to the true
+    # bin starts.
+    n_bins = int(np.ceil(duration / bin_size - BIN_COUNT_TOLERANCE))
     time = np.arange(n_bins, dtype=float) * bin_size
-    counts, _ = np.histogram(events, bins=n_bins, range=(0, duration))
-    firing_rate = counts.astype(float) / bin_size
+    edges = np.concatenate((time, [duration]))
+    bin_widths = np.diff(edges)
+    counts, _ = np.histogram(events, bins=edges)
+    firing_rate = counts.astype(float) / bin_widths
     # Limit the window so same-mode convolution preserves input length.
     half_width = min(10, max(0, (n_bins - 1) // 2))
     offsets = np.arange(-half_width, half_width + 1, dtype=float)
@@ -473,12 +560,18 @@ def compare_models(
     Raises:
         ValueError: If the common input is invalid for all models. This common
             input validation occurs before model iteration, so it raises rather
-            than producing per-model error mappings.
+            than producing per-model error mappings. The minimum length is the
+            one required by the history-based model and the autoregressive
+            wrapper, which are the strictest of the retained models.
     """
-    series = _as_finite_series(firing_rate, minimum_length=10, name="firing_rate")
+    series = _as_identifiable_series(
+        firing_rate,
+        history_length=COMPARISON_MODEL_ORDER,
+        name="firing_rate",
+    )
     models: dict[str, Any] = {
-        "Optimal Controller": OptimalController(history_length=5),
-        "AR Model": AutoregressiveModel(order=5),
+        "Optimal Controller": OptimalController(history_length=COMPARISON_MODEL_ORDER),
+        "AR Model": AutoregressiveModel(order=COMPARISON_MODEL_ORDER),
         "PID Controller": PIDController(),
         "Static Baseline": StaticBaseline(),
     }

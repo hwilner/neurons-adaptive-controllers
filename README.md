@@ -8,7 +8,7 @@ This independent research repository contains controller-style time-series utili
 |---|---|
 | History-based predictor, autoregressive wrapper, PID-style reference, and mean baseline | Implemented as in-memory software utilities for caller-supplied one-dimensional series. |
 | Event-time binning and Gaussian smoothing utility | Implemented and covered by deterministic synthetic tests. |
-| Synthetic model-interface tests | Passed for defined valid inputs, invalid histories, non-finite values, and returned comparison structures. |
+| Synthetic model-interface tests | Passed for defined valid inputs, invalid histories, non-finite values, returned comparison structures, per-bin rate widths, and fits the data cannot identify. |
 | Empirical neural-data evaluation | Not implemented; no dataset, benchmark, figure, or observed result is included. |
 
 **Current conclusion:** the repository has a working **synthetic methods prototype**. It has not established that neurons or neural systems behave as adaptive controllers, and it has no empirical success or failure result to report.
@@ -20,6 +20,7 @@ This independent research repository contains controller-style time-series utili
 | `src/control_models.py` | Controller-style models, preprocessing, and comparison helpers. |
 | `tests/` | Synthetic, file-free unit tests. |
 | `tools/check_public_boundary.py` | Tracked-file release-boundary scanner. |
+| `.github/workflows/ci.yml` | Continuous integration running the test suite and the boundary scanner. |
 | `docs/` | Research status, methods scope, deferred directions, and contribution guidance. |
 | `requirements.txt` | Runtime requirement for retained model utilities. |
 
@@ -32,6 +33,8 @@ python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 python tools/check_public_boundary.py
 ```
+
+The same two checks run in CI on every push to `main` and on every pull request targeting `main`, so a green CI run means the documented gate passed.
 
 ## Keywords
 
