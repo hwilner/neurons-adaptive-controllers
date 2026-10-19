@@ -3,7 +3,9 @@
 import unittest
 
 import numpy as np
+from numpy.typing import NDArray
 
+from src import control_models
 from src.control_models import (
     OptimalController,
     PIDController,
@@ -13,6 +15,30 @@ from src.control_models import (
     preprocess_spike_train,
 )
 from tools.check_public_boundary import DOI_PATTERN
+
+
+# A Gaussian window this narrow underflows to a single unit bin, so the
+# smoothing step becomes the identity. Using it lets a test inspect the binning
+# on its own instead of the binned rate smeared across neighbouring bins.
+DELTA_SIGMA = 0.01
+
+
+def _mixed_series(length: int) -> NDArray[np.float64]:
+    """Return a deterministic series without an exact low-order recurrence.
+
+    A single sinusoid satisfies a second-order linear recurrence, so its lagged
+    design matrix stays low-rank however many values are supplied. Combining
+    incommensurate frequencies with a ramp keeps the design matrix full rank,
+    which is what an identifiability test needs.
+
+    Args:
+        length: Number of values to generate.
+
+    Returns:
+        A one-dimensional array of `length` values.
+    """
+    index = np.linspace(0.0, 1.0, length)
+    return np.sin(index * 4.0 * np.pi) + 0.5 * np.cos(index * 9.0 * np.pi) + index
 
 
 class ControlModelsTest(unittest.TestCase):
@@ -41,6 +67,41 @@ class ControlModelsTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             preprocess_spike_train([0.5, 1.1], duration=1.0, bin_size=0.1)
 
+    def test_preprocess_rate_uses_the_width_of_the_bin_holding_the_event(self) -> None:
+        """A rate is measured over the interval its own bin actually covers."""
+        # The bins tile [0, 1.0] with widths 0.4, 0.4, and 0.2, so an event at
+        # 0.9 belongs to the third bin, whose interval is 0.2 s wide. Dividing
+        # by the requested width instead would report 2.5 rather than 5.0.
+        time, rate = preprocess_spike_train(
+            [0.9], duration=1.0, bin_size=0.4, sigma=DELTA_SIGMA
+        )
+        self.assertEqual(len(time), 3)
+        self.assertAlmostEqual(time[2], 0.8)
+        self.assertAlmostEqual(rate[2], 1.0 / 0.2)
+        self.assertAlmostEqual(rate[0], 0.0)
+        self.assertAlmostEqual(rate[1], 0.0)
+
+    def test_preprocess_keeps_every_bin_when_the_duration_divides_evenly(self) -> None:
+        """A duration that is a multiple of the bin width keeps all of its bins."""
+        # 0.3 / 0.1 evaluates to 2.9999999999999996 in binary floating point, so
+        # truncating that count would silently drop the third bin.
+        time, rate = preprocess_spike_train(
+            [0.25], duration=0.3, bin_size=0.1, sigma=DELTA_SIGMA
+        )
+        self.assertEqual(len(time), 3)
+        self.assertAlmostEqual(rate[2], 1.0 / 0.1)
+
+    def test_preprocess_counts_an_event_in_the_final_partial_bin(self) -> None:
+        """An event near the duration is counted in the bin that contains it."""
+        # The bins tile [0, 1.0] with widths 0.6 and 0.4, so an event at 0.99
+        # belongs to the second bin, whose interval is 0.4 s wide.
+        time, rate = preprocess_spike_train(
+            [0.99], duration=1.0, bin_size=0.6, sigma=DELTA_SIGMA
+        )
+        self.assertEqual(len(time), 2)
+        self.assertAlmostEqual(time[1], 0.6)
+        self.assertAlmostEqual(rate[1], 1.0 / 0.4)
+
     def test_history_model_predicts_after_fit(self) -> None:
         """A fitted model accepts a history with the configured length."""
         series = np.linspace(0.0, 1.0, 40)
@@ -61,6 +122,41 @@ class ControlModelsTest(unittest.TestCase):
         model = OptimalController(history_length=4)
         with self.assertRaises(ValueError):
             model.predict([0.5, 0.6, 0.7, 0.8])
+
+    def test_history_fit_rejects_a_series_too_short_to_identify_the_solve(self) -> None:
+        """A rank-deficient fit is rejected instead of reported as a perfect score."""
+        # Five lags and an intercept need six training rows, and the
+        # chronological split keeps two values aside, so ten values cannot
+        # identify the solve. The rank-deficient solve used to return a
+        # held-out R-squared of exactly 1.0, which was an artifact of the
+        # minimum-norm convention rather than a property of the model.
+        model = OptimalController(history_length=5)
+        with self.assertRaises(ValueError):
+            model.fit(_mixed_series(10))
+
+    def test_history_fit_accepts_the_shortest_series_that_identifies_the_solve(self) -> None:
+        """The shortest identifying series fits, and one value fewer is rejected."""
+        for history_length in range(1, 13):
+            minimum_length = control_models._minimum_series_length(history_length)
+            series = _mixed_series(minimum_length)
+            result = OptimalController(history_length=history_length).fit(series)
+            self.assertEqual(len(result["weights"]), history_length)
+            self.assertTrue(np.all(np.isfinite(result["weights"])))
+            with self.assertRaises(ValueError):
+                OptimalController(history_length=history_length).fit(series[:-1])
+
+    def test_minimum_series_length_always_identifies_the_training_split(self) -> None:
+        """The shortest series always leaves enough training rows for the fit."""
+        for history_length in range(1, 13):
+            n_pairs = control_models._minimum_series_length(history_length) - history_length
+            n_train = max(2, int(control_models.TRAINING_FRACTION * n_pairs))
+            self.assertGreaterEqual(n_train, history_length + 1)
+            self.assertGreaterEqual(n_pairs - n_train, 2)
+
+    def test_comparison_rejects_a_series_too_short_for_every_model(self) -> None:
+        """The comparison helper rejects a series shorter than its models need."""
+        with self.assertRaises(ValueError):
+            compare_models(np.linspace(0.0, 1.0, 10))
 
     def test_pid_rejects_nonfinite_setpoint(self) -> None:
         """PID fitting rejects a non-finite setpoint on a finite synthetic series."""

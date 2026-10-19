@@ -23,7 +23,7 @@ python -m unittest discover -s tests -v
 python tools/check_public_boundary.py
 ```
 
-The tests must use synthetic in-memory inputs and must not create repository data, result, figure, download, archive, or cache paths. The scanner examines tracked paths and tracked text only; it does not inspect local untracked material.
+CI runs exactly these two commands on every push to `main` and on every pull request targeting `main`, so a local run and a CI run check the same things. The tests must use synthetic in-memory inputs and must not create repository data, result, figure, download, archive, or cache paths. The scanner examines tracked paths and tracked text only; it does not inspect local untracked material.
 
 ## Documentation
 

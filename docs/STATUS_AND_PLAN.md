@@ -6,7 +6,7 @@ The repository does not yet answer whether neural systems are adaptive controlle
 
 ## Completed work
 
-A linear history-based predictor, an autoregressive wrapper, a PID-style reference simulation, a mean baseline, event-time binning, Gaussian smoothing, and a common comparison helper are implemented. Deterministic synthetic tests cover valid predictions, invalid histories, finite-input validation, preprocessing shape, and returned comparison structures.
+A linear history-based predictor, an autoregressive wrapper, a PID-style reference simulation, a mean baseline, event-time binning, Gaussian smoothing, and a common comparison helper are implemented. Deterministic synthetic tests cover valid predictions, invalid histories, finite-input validation, preprocessing shape, per-bin rate widths, fits the data cannot identify, and returned comparison structures.
 
 ## Successful and failed work
 
